@@ -1,0 +1,15 @@
+[package]
+name = "brztracer"
+version = "0.1.0"
+edition = "2021"
+description = "High-performance CLI that converts pixel art (PNG/JPEG) into scalable SVG vectors using the xBRZ algorithm"
+license = "MIT"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+image = "0.25"
+
+[profile.release]
+lto = true
+codegen-units = 1

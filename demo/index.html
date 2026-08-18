@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BRZtracer — pixel art to crisp SVG</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg-2: #161b22;
+    --bg-3: #1f2630;
+    --border: #30363d;
+    --fg: #e6edf3;
+    --muted: #8b949e;
+    --accent: #ffb86b;
+    --accent-2: #56d364;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { color-scheme: dark; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: var(--sans);
+    line-height: 1.5;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  header.hero {
+    padding: 3.5rem 1.5rem 2.5rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    background:
+      radial-gradient(1200px 400px at 50% -100px, rgba(86, 211, 100, 0.10), transparent),
+      var(--bg);
+  }
+  .brand {
+    font-family: var(--mono);
+    font-size: 2.4rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+  }
+  .brand b { color: var(--accent); }
+  header.hero h1 { font-size: 1.15rem; font-weight: 600; margin: 0.4rem 0 0; }
+  .tagline { color: var(--muted); max-width: 56ch; margin: 0.6rem auto 1.2rem; }
+  .usage {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.55rem 0.9rem;
+    color: var(--fg);
+  }
+  .usage .dollar { color: var(--muted); }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem 3rem; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .card {
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.9rem 1.1rem 0.7rem;
+  }
+  .card-head h2 {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+  .badge {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: var(--mono);
+    white-space: nowrap;
+  }
+
+  /* -------- before/after compare -------- */
+  .compare {
+    position: relative;
+    width: 100%;
+    height: 230px;
+    margin: 0 auto;
+    background:
+      repeating-conic-gradient(#1a2029 0% 25%, #141a22 0% 50%) 0 0 / 22px 22px;
+    cursor: col-resize;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .compare .layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .compare .orig {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    object-fit: contain;
+    padding: 0.75rem;
+  }
+  .compare .svgclip {
+    clip-path: inset(0 0 0 50%);
+  }
+  .compare .svgimg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 0.75rem;
+  }
+  .compare .divider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 2px;
+    background: var(--accent);
+    transform: translateX(-1px);
+    pointer-events: none;
+  }
+  .compare .divider::before,
+  .compare .divider::after {
+    content: "\25C0 \25B6";
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0.5rem;
+    font-size: 0.7rem;
+    color: var(--bg);
+    background: var(--accent);
+    border-radius: 999px;
+    padding: 0.15rem 0.5rem;
+    letter-spacing: 2px;
+  }
+  .compare .divider::after { content: none; }
+  .compare-label {
+    position: absolute;
+    bottom: 0.4rem;
+    font-size: 0.66rem;
+    font-family: var(--mono);
+    background: rgba(13, 17, 23, 0.85);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.15rem 0.5rem;
+    color: var(--muted);
+    pointer-events: none;
+  }
+  .label-orig { left: 0.5rem; }
+  .label-svg { right: 0.5rem; }
+
+  /* -------- controls & stats -------- */
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.8rem 1.1rem;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .ctl-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-right: 0.35rem;
+  }
+  .scale-btns { display: flex; gap: 0.4rem; }
+  .scale-btn {
+    appearance: none;
+    background: var(--bg-3);
+    color: var(--fg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    padding: 0.28rem 0.7rem;
+    cursor: pointer;
+  }
+  .scale-btn:hover { border-color: var(--muted); }
+  .scale-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #14181f;
+    font-weight: 700;
+  }
+  .out-size { margin-left: auto; font-family: var(--mono); font-size: 0.78rem; color: var(--muted); }
+
+  .stats {
+    list-style: none;
+    margin: 0;
+    padding: 0.85rem 1.1rem 1rem;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+  }
+  .stats li { text-align: center; }
+  .stats b { display: block; font-family: var(--mono); font-size: 1.05rem; font-weight: 600; }
+  .stats span { font-size: 0.68rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem 1.5rem 3rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-align: center;
+    max-width: 760px;
+    margin: 0 auto;
+  }
+  footer p { margin: 0.4rem 0; }
+  code { font-family: var(--mono); background: var(--bg-2); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.85em; }
+  @media (max-width: 560px) {
+    .compare { height: 190px; }
+    .stats b { font-size: 0.9rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="brand"><b>BRZ</b>tracer</div>
+  <h1>Pixel art &rarr; crisp SVG</h1>
+  <p class="tagline">xBRZ upscaling + boundary tracing: every shape below is a vector path, not a pile of rectangles.</p>
+  <div class="usage"><span class="dollar">$ </span>brztracer -i sprite.png -o sprite.svg -s 4x</div>
+</header>
+
+<main>
+  <div class="grid">
+
+      <section class="card">
+        <header class="card-head">
+          <h2>ship-blue</h2>
+          <span class="badge">32×32px · 7 colors</span>
+        </header>
+        <div class="compare">
+          <img class="layer orig" src="images/ship-blue.png" alt="ship-blue original">
+          <div class="layer svgclip">
+            <img class="svgimg" src="output/ship-blue_4x.svg" alt="ship-blue as SVG">
+          </div>
+          <div class="divider" aria-hidden="true"><span></span></div>
+        </div>
+        <div class="controls">
+          <span class="ctl-label">scale</span>
+          <span class="scale-btns"></span>
+          <span class="out-size"></span>
+        </div>
+        <ul class="stats">
+          <li><b class="st-paths"></b><span>paths</span></li>
+          <li><b class="st-loops"></b><span>loops</span></li>
+          <li><b class="st-size"></b><span>svg size</span></li>
+          <li><b class="st-ratio"></b><span>vs &lt;rect&gt;s</span></li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <header class="card-head">
+          <h2>ship-red</h2>
+          <span class="badge">32×32px · 7 colors</span>
+        </header>
+        <div class="compare">
+          <img class="layer orig" src="images/ship-red.png" alt="ship-red original">
+          <div class="layer svgclip">
+            <img class="svgimg" src="output/ship-red_4x.svg" alt="ship-red as SVG">
+          </div>
+          <div class="divider" aria-hidden="true"><span></span></div>
+        </div>
+        <div class="controls">
+          <span class="ctl-label">scale</span>
+          <span class="scale-btns"></span>
+          <span class="out-size"></span>
+        </div>
+        <ul class="stats">
+          <li><b class="st-paths"></b><span>paths</span></li>
+          <li><b class="st-loops"></b><span>loops</span></li>
+          <li><b class="st-size"></b><span>svg size</span></li>
+          <li><b class="st-ratio"></b><span>vs &lt;rect&gt;s</span></li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <header class="card-head">
+          <h2>ship-green</h2>
+          <span class="badge">32×32px · 6 colors</span>
+        </header>
+        <div class="compare">
+          <img class="layer orig" src="images/ship-green.png" alt="ship-green original">
+          <div class="layer svgclip">
+            <img class="svgimg" src="output/ship-green_4x.svg" alt="ship-green as SVG">
+          </div>
+          <div class="divider" aria-hidden="true"><span></span></div>
+        </div>
+        <div class="controls">
+          <span class="ctl-label">scale</span>
+          <span class="scale-btns"></span>
+          <span class="out-size"></span>
+        </div>
+        <ul class="stats">
+          <li><b class="st-paths"></b><span>paths</span></li>
+          <li><b class="st-loops"></b><span>loops</span></li>
+          <li><b class="st-size"></b><span>svg size</span></li>
+          <li><b class="st-ratio"></b><span>vs &lt;rect&gt;s</span></li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <header class="card-head">
+          <h2>asteroid</h2>
+          <span class="badge">16×16px · 3 colors</span>
+        </header>
+        <div class="compare">
+          <img class="layer orig" src="images/asteroid.png" alt="asteroid original">
+          <div class="layer svgclip">
+            <img class="svgimg" src="output/asteroid_4x.svg" alt="asteroid as SVG">
+          </div>
+          <div class="divider" aria-hidden="true"><span></span></div>
+        </div>
+        <div class="controls">
+          <span class="ctl-label">scale</span>
+          <span class="scale-btns"></span>
+          <span class="out-size"></span>
+        </div>
+        <ul class="stats">
+          <li><b class="st-paths"></b><span>paths</span></li>
+          <li><b class="st-loops"></b><span>loops</span></li>
+          <li><b class="st-size"></b><span>svg size</span></li>
+          <li><b class="st-ratio"></b><span>vs &lt;rect&gt;s</span></li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <header class="card-head">
+          <h2>gem</h2>
+          <span class="badge">16×16px · 4 colors</span>
+        </header>
+        <div class="compare">
+          <img class="layer orig" src="images/gem.png" alt="gem original">
+          <div class="layer svgclip">
+            <img class="svgimg" src="output/gem_4x.svg" alt="gem as SVG">
+          </div>
+          <div class="divider" aria-hidden="true"><span></span></div>
+        </div>
+        <div class="controls">
+          <span class="ctl-label">scale</span>
+          <span class="scale-btns"></span>
+          <span class="out-size"></span>
+        </div>
+        <ul class="stats">
+          <li><b class="st-paths"></b><span>paths</span></li>
+          <li><b class="st-loops"></b><span>loops</span></li>
+          <li><b class="st-size"></b><span>svg size</span></li>
+          <li><b class="st-ratio"></b><span>vs &lt;rect&gt;s</span></li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <header class="card-head">
+          <h2>character</h2>
+          <span class="badge">18×18px · 3 colors</span>
+        </header>
+        <div class="compare">
+          <img class="layer orig" src="images/character.png" alt="character original">
+          <div class="layer svgclip">
+            <img class="svgimg" src="output/character_4x.svg" alt="character as SVG">
+          </div>
+          <div class="divider" aria-hidden="true"><span></span></div>
+        </div>
+        <div class="controls">
+          <span class="ctl-label">scale</span>
+          <span class="scale-btns"></span>
+          <span class="out-size"></span>
+        </div>
+        <ul class="stats">
+          <li><b class="st-paths"></b><span>paths</span></li>
+          <li><b class="st-loops"></b><span>loops</span></li>
+          <li><b class="st-size"></b><span>svg size</span></li>
+          <li><b class="st-ratio"></b><span>vs &lt;rect&gt;s</span></li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <header class="card-head">
+          <h2>creature</h2>
+          <span class="badge">18×18px · 5 colors</span>
+        </header>
+        <div class="compare">
+          <img class="layer orig" src="images/creature.png" alt="creature original">
+          <div class="layer svgclip">
+            <img class="svgimg" src="output/creature_4x.svg" alt="creature as SVG">
+          </div>
+          <div class="divider" aria-hidden="true"><span></span></div>
+        </div>
+        <div class="controls">
+          <span class="ctl-label">scale</span>
+          <span class="scale-btns"></span>
+          <span class="out-size"></span>
+        </div>
+        <ul class="stats">
+          <li><b class="st-paths"></b><span>paths</span></li>
+          <li><b class="st-loops"></b><span>loops</span></li>
+          <li><b class="st-size"></b><span>svg size</span></li>
+          <li><b class="st-ratio"></b><span>vs &lt;rect&gt;s</span></li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <header class="card-head">
+          <h2>hero</h2>
+          <span class="badge">18×18px · 7 colors</span>
+        </header>
+        <div class="compare">
+          <img class="layer orig" src="images/hero.png" alt="hero original">
+          <div class="layer svgclip">
+            <img class="svgimg" src="output/hero_4x.svg" alt="hero as SVG">
+          </div>
+          <div class="divider" aria-hidden="true"><span></span></div>
+        </div>
+        <div class="controls">
+          <span class="ctl-label">scale</span>
+          <span class="scale-btns"></span>
+          <span class="out-size"></span>
+        </div>
+        <ul class="stats">
+          <li><b class="st-paths"></b><span>paths</span></li>
+          <li><b class="st-loops"></b><span>loops</span></li>
+          <li><b class="st-size"></b><span>svg size</span></li>
+          <li><b class="st-ratio"></b><span>vs &lt;rect&gt;s</span></li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <header class="card-head">
+          <h2>ghost</h2>
+          <span class="badge">16×16px · 5 colors</span>
+        </header>
+        <div class="compare">
+          <img class="layer orig" src="images/ghost.png" alt="ghost original">
+          <div class="layer svgclip">
+            <img class="svgimg" src="output/ghost_4x.svg" alt="ghost as SVG">
+          </div>
+          <div class="divider" aria-hidden="true"><span></span></div>
+        </div>
+        <div class="controls">
+          <span class="ctl-label">scale</span>
+          <span class="scale-btns"></span>
+          <span class="out-size"></span>
+        </div>
+        <ul class="stats">
+          <li><b class="st-paths"></b><span>paths</span></li>
+          <li><b class="st-loops"></b><span>loops</span></li>
+          <li><b class="st-size"></b><span>svg size</span></li>
+          <li><b class="st-ratio"></b><span>vs &lt;rect&gt;s</span></li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <header class="card-head">
+          <h2>tilemap</h2>
+          <span class="badge">379×170px · 28 colors</span>
+        </header>
+        <div class="compare">
+          <img class="layer orig" src="images/tilemap.png" alt="tilemap original">
+          <div class="layer svgclip">
+            <img class="svgimg" src="output/tilemap_4x.svg" alt="tilemap as SVG">
+          </div>
+          <div class="divider" aria-hidden="true"><span></span></div>
+        </div>
+        <div class="controls">
+          <span class="ctl-label">scale</span>
+          <span class="scale-btns"></span>
+          <span class="out-size"></span>
+        </div>
+        <ul class="stats">
+          <li><b class="st-paths"></b><span>paths</span></li>
+          <li><b class="st-loops"></b><span>loops</span></li>
+          <li><b class="st-size"></b><span>svg size</span></li>
+          <li><b class="st-ratio"></b><span>vs &lt;rect&gt;s</span></li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <header class="card-head">
+          <h2>sample_platformer</h2>
+          <span class="badge">918×515px · 255 colors</span>
+        </header>
+        <div class="compare">
+          <img class="layer orig" src="images/sample_platformer.png" alt="sample_platformer original">
+          <div class="layer svgclip">
+            <img class="svgimg" src="output/sample_platformer_2x.svg" alt="sample_platformer as SVG">
+          </div>
+          <div class="divider" aria-hidden="true"><span></span></div>
+        </div>
+        <div class="controls">
+          <span class="ctl-label">scale</span>
+          <span class="scale-btns"></span>
+          <span class="out-size"></span>
+        </div>
+        <ul class="stats">
+          <li><b class="st-paths"></b><span>paths</span></li>
+          <li><b class="st-loops"></b><span>loops</span></li>
+          <li><b class="st-size"></b><span>svg size</span></li>
+          <li><b class="st-ratio"></b><span>vs &lt;rect&gt;s</span></li>
+        </ul>
+      </section>
+  </div>
+</main>
+
+<footer>
+  <p>Every SVG on this page was produced by the <code>brztracer</code> release binary
+     from the PNG beside it &mdash; no hand editing.</p>
+  <p>Drag the divider to compare the original pixels against the traced vectors;
+     use the scale buttons to switch xBRZ factors.</p>
+  <p>Demo images: <a href="https://kenney.nl/assets/pixel-shmup">Kenney “Pixel Shmup”</a>
+     (<code>ship-blue</code>, <code>ship-red</code>, <code>ship-green</code>, <code>asteroid</code>, <code>gem</code>),
+     <a href="https://kenney.nl/assets/pixel-platformer">Kenney “Pixel Platformer”</a>,
+     <a href="https://kenney.nl/assets/1-bit-pack">Kenney “1-Bit Pack”</a> — all CC0,
+     public domain — plus the in-house <code>ghost</code> test sprite. See <code>demo/README.md</code>.</p>
+  <p>BRZtracer is MIT licensed.</p>
+</footer>
+
+<script>
+const DATA = [{"name":"ship-blue","file":"ship-blue.png","src_w":32,"src_h":32,"src_colors":7,"scales":{"2x":{"out_w":64,"out_h":64,"paths":30,"loops":227,"bytes":6287},"4x":{"out_w":128,"out_h":128,"paths":40,"loops":505,"bytes":13039},"6x":{"out_w":192,"out_h":192,"paths":50,"loops":787,"bytes":20966}}},{"name":"ship-red","file":"ship-red.png","src_w":32,"src_h":32,"src_colors":7,"scales":{"2x":{"out_w":64,"out_h":64,"paths":31,"loops":253,"bytes":6858},"4x":{"out_w":128,"out_h":128,"paths":43,"loops":527,"bytes":13844},"6x":{"out_w":192,"out_h":192,"paths":52,"loops":802,"bytes":21985}}},{"name":"ship-green","file":"ship-green.png","src_w":32,"src_h":32,"src_colors":6,"scales":{"2x":{"out_w":64,"out_h":64,"paths":28,"loops":189,"bytes":5498},"4x":{"out_w":128,"out_h":128,"paths":34,"loops":389,"bytes":10146},"6x":{"out_w":192,"out_h":192,"paths":39,"loops":587,"bytes":16263}}},{"name":"asteroid","file":"asteroid.png","src_w":16,"src_h":16,"src_colors":3,"scales":{"2x":{"out_w":32,"out_h":32,"paths":8,"loops":91,"bytes":2260},"4x":{"out_w":64,"out_h":64,"paths":10,"loops":187,"bytes":4326},"6x":{"out_w":96,"out_h":96,"paths":12,"loops":283,"bytes":6309}}},{"name":"gem","file":"gem.png","src_w":16,"src_h":16,"src_colors":4,"scales":{"2x":{"out_w":32,"out_h":32,"paths":12,"loops":103,"bytes":2811},"4x":{"out_w":64,"out_h":64,"paths":13,"loops":211,"bytes":5260},"6x":{"out_w":96,"out_h":96,"paths":14,"loops":319,"bytes":7659}}},{"name":"character","file":"character.png","src_w":18,"src_h":18,"src_colors":3,"scales":{"2x":{"out_w":36,"out_h":36,"paths":12,"loops":51,"bytes":1873},"4x":{"out_w":72,"out_h":72,"paths":16,"loops":107,"bytes":3360},"6x":{"out_w":108,"out_h":108,"paths":20,"loops":163,"bytes":4745}}},{"name":"creature","file":"creature.png","src_w":18,"src_h":18,"src_colors":5,"scales":{"2x":{"out_w":36,"out_h":36,"paths":18,"loops":75,"bytes":2462},"4x":{"out_w":72,"out_h":72,"paths":23,"loops":157,"bytes":4528},"6x":{"out_w":108,"out_h":108,"paths":28,"loops":241,"bytes":6503}}},{"name":"hero","file":"hero.png","src_w":18,"src_h":18,"src_colors":7,"scales":{"2x":{"out_w":36,"out_h":36,"paths":16,"loops":53,"bytes":1929},"4x":{"out_w":72,"out_h":72,"paths":20,"loops":133,"bytes":3723},"6x":{"out_w":108,"out_h":108,"paths":24,"loops":213,"bytes":5528}}},{"name":"ghost","file":"ghost.png","src_w":16,"src_h":16,"src_colors":5,"scales":{"2x":{"out_w":32,"out_h":32,"paths":14,"loops":46,"bytes":1807},"4x":{"out_w":64,"out_h":64,"paths":18,"loops":96,"bytes":3052},"6x":{"out_w":96,"out_h":96,"paths":22,"loops":148,"bytes":4239}}},{"name":"tilemap","file":"tilemap.png","src_w":379,"src_h":170,"src_colors":28,"scales":{"2x":{"out_w":758,"out_h":340,"paths":282,"loops":11661,"bytes":314183},"4x":{"out_w":1516,"out_h":680,"paths":365,"loops":25353,"bytes":723304}}},{"name":"sample_platformer","file":"sample_platformer.png","src_w":918,"src_h":515,"src_colors":255,"scales":{"2x":{"out_w":1836,"out_h":1030,"paths":2686,"loops":33735,"bytes":999462}}}];
+const grid = document.querySelector(".grid");
+
+function fmtBytes(n) {
+  return n >= 1024 ? (n / 1024).toFixed(1) + " KB" : n + " B";
+}
+
+function ratioFor(entry, scaleKey) {
+  const s = entry.scales[scaleKey];
+  const rects = s.out_w * s.out_h;
+  return (rects / s.paths).toFixed(0) + "×";
+}
+
+const cards = grid.querySelectorAll(".card");
+cards.forEach((card, idx) => {
+  const entry = DATA[idx];
+  const cmp = card.querySelector(".compare");
+  const svgImg = card.querySelector(".svgimg");
+  const outSize = card.querySelector(".out-size");
+  const stPaths = card.querySelector(".st-paths");
+  const stLoops = card.querySelector(".st-loops");
+  const stSize = card.querySelector(".st-size");
+  const stRatio = card.querySelector(".st-ratio");
+  const labels = document.createElement("div");
+  labels.innerHTML = '<span class="compare-label label-orig">pixels</span><span class="compare-label label-svg">svg</span>';
+  cmp.appendChild(labels);
+
+  const scaleKeys = Object.keys(entry.scales);
+  let scale = scaleKeys.includes("4x") ? "4x" : scaleKeys[0];
+
+  function applyScale() {
+    const s = entry.scales[scale];
+    svgImg.src = `output/${entry.name}_${scale}.svg`;
+    outSize.textContent = `${s.out_w}×${s.out_h}`;
+    stPaths.textContent = s.paths;
+    stLoops.textContent = s.loops;
+    stSize.textContent = fmtBytes(s.bytes);
+    stRatio.textContent = ratioFor(entry, scale);
+  }
+
+  const btnWrap = card.querySelector(".scale-btns");
+  for (const key of scaleKeys) {
+    const btn = document.createElement("button");
+    btn.className = "scale-btn" + (key === scale ? " active" : "");
+    btn.dataset.scale = key;
+    btn.textContent = key;
+    btn.addEventListener("click", () => {
+      btnWrap.querySelectorAll(".scale-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      scale = btn.dataset.scale;
+      applyScale();
+    });
+    btnWrap.appendChild(btn);
+  }
+
+  // before/after divider drag
+  function setSplit(pct) {
+    pct = Math.max(4, Math.min(96, pct));
+    cmp.querySelector(".svgclip").style.clipPath = `inset(0 0 0 ${pct}%)`;
+    cmp.querySelector(".divider").style.left = pct + "%";
+  }
+  cmp.addEventListener("pointerdown", e => {
+    cmp.setPointerCapture(e.pointerId);
+    const move = ev => {
+      const r = cmp.getBoundingClientRect();
+      setSplit(((ev.clientX - r.left) / r.width) * 100);
+    };
+    move(e);
+    cmp.addEventListener("pointermove", move);
+    cmp.addEventListener("pointerup", () => cmp.removeEventListener("pointermove", move), { once: true });
+  });
+
+  applyScale();
+});
+</script>
+</body>
+</html>
