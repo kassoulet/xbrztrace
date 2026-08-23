@@ -31,10 +31,13 @@ jobs:
       - name: Run tests
         run: cargo test --all-targets
 
+      - name: Benchmarks compile
+        run: cargo bench --no-run
+
       - name: Build release
         run: cargo build --release
 
       - name: Smoke test the demo pipeline
         run: |
-          ./target/release/brztracer -i demo/images/character.png -o /tmp/smoke.svg -s 4x
+          ./target/release/xbrztrace -i demo/images/character.png -o /tmp/smoke.svg -s 4x
           test -s /tmp/smoke.svg

@@ -1,17 +1,19 @@
-# BRZtracer
+# xBRZtrace
 
 A high-performance CLI that converts pixel art (PNG/JPEG) into **scalable SVG
 vectors** using the [xBRZ](https://en.wikipedia.org/wiki/Pixel-art_scaling_algorithms#xBRZ_family)
 pixel-art upscaling algorithm.
 
 ```
-input.png ──► xBRZ upscale ──► vector trace ──► SVG (paths, not rects)
+input.png ──► xBRZ upscale ──► vector trace ──► optimize ──► SVG (paths, not rects)
 ```
 
-Instead of emitting thousands of `<rect>` elements, BRZtracer traces each
+Instead of emitting thousands of `<rect>` elements, xBRZtrace traces each
 contiguous region of identical color into a single consolidated polygon and
-groups all regions of the same color into one compound `<path>`, producing
-tiny, crisp SVGs that scale cleanly to any size.
+groups all regions of the same color into one compound `<path>`, then runs an
+SVGO-style optimization pass that strips redundant control points and flattens
+every loop into a minimal polyline — producing tiny, crisp SVGs that scale
+cleanly to any size.
 
 ## Features
 
@@ -28,8 +30,18 @@ tiny, crisp SVGs that scale cleanly to any size.
   gaps.
 - **`--merge-colors`** — one compound `<path>` per RGBA color (default on;
   disable with `--merge-colors=false` for one path per connected region).
+- **`--quantize`** — merge near-duplicate colors in the input before scaling,
+  collapsing JPEG compression noise into clean flat regions. Takes an
+  optional tolerance in perceptual color distance (default 30, the engine's
+  equal-color threshold).
+- **SVGO-style optimization pass** — after tracing, an `optimizer` stage
+  strips redundant control points (zero-length segments, duplicate points,
+  a trailing point that repeats the start) and flattens every loop into a
+  minimal simple polygon, and the exporter drops the redundant
+  `fill-rule="evenodd"` attribute from single-loop paths. All passes are
+  exact — the rendered output is bit-identical to the unoptimized one.
 - **Verbose metrics** — input/output dimensions, timing per stage, path and
-  color counts, output size.
+  color counts, optimization stats, output size.
 - Defensive error handling for missing files, corrupt data and unsupported
   scale factors.
 
@@ -41,12 +53,12 @@ Requires Rust 1.75+ (uses the `image`, `clap` and `anyhow` crates).
 cargo build --release
 ```
 
-The binary is produced at `target/release/brztracer`.
+The binary is produced at `target/release/xbrztrace`.
 
 ## Usage
 
 ```
-brztracer -i <PATH> -o <PATH> [-s <2x|3x|4x|5x|6x>] [--merge-colors[=BOOL]] [-v]
+xbrztrace -i <PATH> -o <PATH> [-s <2x|3x|4x|5x|6x>] [--merge-colors[=BOOL]] [-q [<TOL>]] [-v]
 ```
 
 | Flag | Description | Default |
@@ -55,22 +67,29 @@ brztracer -i <PATH> -o <PATH> [-s <2x|3x|4x|5x|6x>] [--merge-colors[=BOOL]] [-v]
 | `-o, --output <PATH>` | Output `.svg` file | required |
 | `-s, --scale <2x\|3x\|4x\|5x\|6x>` | xBRZ scaling factor | `4x` |
 | `--merge-colors` | Group identical RGBA fills into one compound `<path>` per color (`--merge-colors=false` disables) | `true` |
+| `-q, --quantize [<TOL>]` | Merge near-duplicate colors in the input before scaling (tolerance in perceptual color distance; `--quantize` alone uses 30, `--quantize 64` a looser merge) | off |
 | `-v, --verbose` | Print timing, dimensions, path counts and size stats to stderr | off |
 
 ### Examples
 
 ```bash
 # Basic 4x upscale of a sprite
-brztracer -i sprite.png -o sprite.svg
+xbrztrace -i sprite.png -o sprite.svg
 
 # 6x with timing stats
-brztracer -i sprite.png -o sprite.svg -s 6x -v
+xbrztrace -i sprite.png -o sprite.svg -s 6x -v
 
 # One path per connected region instead of one per color
-brztracer -i sprite.png -o sprite.svg --merge-colors=false
+xbrztrace -i sprite.png -o sprite.svg --merge-colors=false
 
 # JPEG input
-brztracer -i photo.jpg -o photo.svg -s 3x
+xbrztrace -i photo.jpg -o photo.svg -s 3x
+
+# Clean up JPEG compression noise before tracing
+xbrztrace -i photo.jpg -o photo.svg --quantize
+
+# Same, with a looser merge tolerance
+xbrztrace -i photo.jpg -o photo.svg --quantize 64 -v
 ```
 
 Example verbose output:
@@ -79,8 +98,9 @@ Example verbose output:
 input:      32x32 px
 output:     128x128 px (4x)
 colors:     41 (41 <path> elements, 240 loops)
-timing:     load 0.16 ms | xbrz 0.08 ms | vectorize 0.54 ms | export 0.10 ms | write 0.06 ms | total 0.93 ms
-svg:        8.0 KB (8146 bytes)
+optimize:   240 loops, 1512 -> 1512 control points (0.0% fewer)
+timing:     load 0.16 ms | xbrz 0.08 ms | vectorize 0.54 ms | optimize 0.02 ms | export 0.10 ms | write 0.06 ms | total 0.97 ms
+svg:        8.0 KB (8126 bytes)
 ```
 
 ## How it works
@@ -91,9 +111,11 @@ The pipeline lives in five modules:
 | ------ | -------------- |
 | `cli` | Argument parsing and validation (`clap`) |
 | `image_loader` | Decode PNG/JPEG into a normalized RGBA grid |
+| `quantize` | Optional pre-pass: cluster near-duplicate colors within a perceptual tolerance (for lossy inputs) |
 | `xbrz_engine` | The xBRZ upscaler: color distance, corner preprocessing, per-scale blend tables, scale driver |
 | `vectorizer` | Boundary tracing of same-color regions into closed polygons, collinear merging, color grouping |
-| `svg_exporter` | Serialize regions into compact `<svg>` markup |
+| `optimizer` | SVGO-style post-processing: strip redundant control points, flatten loops into minimal polylines |
+| `svg_exporter` | Serialize regions into compact `<svg>` markup (elides redundant attributes) |
 
 ### xBRZ engine
 
@@ -119,6 +141,25 @@ right), tracing each loop exactly once. Consecutive collinear segments are
 merged, so a straight run of any length emits a single `H`/`V` command. Holes
 become separate loops handled by the even-odd fill rule.
 
+### Path optimization
+
+After tracing, the `optimizer` stage applies SVGO-style cleanup passes that
+are exact (they never move a vertex, so rendering is unchanged):
+
+- **Strip redundant control points** — zero-length segments, duplicate
+  consecutive points, and a trailing point that repeats the first point
+  (whose closing `Z` command already implies the return) are removed.
+- **Flatten loops** — any point lying on the straight line between its
+  neighbors is dropped, including across the implied closing segment,
+  iterating to a fixpoint. Every loop ends up a minimal simple polygon with
+  no curves.
+- **Elide redundant attributes** — `fill-rule="evenodd"` is omitted for
+  single-loop paths, where the default fill rule fills identically.
+
+The tracer already merges collinear runs while tracing, so on its current
+output this pass is mostly a guarantee; it is defense in depth that keeps
+path data minimal even if the tracing strategy changes.
+
 ## Testing
 
 ```bash
@@ -136,11 +177,35 @@ The test suite includes:
   upscaled, traced, serialized, and the SVG is rasterized back with an
   independent even-odd renderer — the result must equal the upscaled grid
   exactly, proving there are no seams, gaps or geometry errors.
+- **Property-based tests** (`tests/property.rs`, proptest): hundreds of
+  randomly generated grids — including isolated pixels, nested holes,
+  checkerboard noise and translucent colors — must round-trip through
+  vectorize → serialize → rasterize exactly, both with and without the
+  optimization pass (the optimizer must be invisible to the rendered
+  output, idempotent, and never grow paths). The xBRZ engine is also
+  checked for output dimensions, determinism and uniform-input stability on
+  arbitrary random pixels (a panic fuzz).
 - **CLI integration tests** (`tests/cli.rs`): end-to-end runs of the compiled
   binary covering every scale factor, both merge modes, verbose stats, and
   all error paths.
 - Unit tests in each module (checkerboards, holes, L-shapes, transparent
   pixels, solid-color stability, etc.).
+
+## Benchmarks
+
+[Criterion](https://github.com/bheisler/criterion.rs) micro-benchmarks cover
+the hot paths:
+
+```bash
+cargo bench                 # all benchmarks
+cargo bench --bench xbrz     # scaling engine only (2x–6x, 64x64 and 128x128)
+cargo bench --bench vectorizer  # tracing, optimization, export, and the full pipeline
+```
+
+Benchmark inputs are generated deterministically (a seeded scene with
+rectangles, diagonals, checkerboards and transparent holes), so results are
+reproducible across runs and machines. After a run, an HTML report with
+regression comparisons is written to `target/criterion/`.
 
 ## Demo
 

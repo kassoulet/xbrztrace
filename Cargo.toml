@@ -1,5 +1,5 @@
 [package]
-name = "brztracer"
+name = "xbrztrace"
 version = "0.1.0"
 edition = "2021"
 description = "High-performance CLI that converts pixel art (PNG/JPEG) into scalable SVG vectors using the xBRZ algorithm"
@@ -10,6 +10,24 @@ anyhow = "1"
 clap = { version = "4", features = ["derive"] }
 image = "0.25"
 
+[dev-dependencies]
+criterion = "0.8"
+proptest = "1"
+
+[[bench]]
+name = "xbrz"
+harness = false
+
+[[bench]]
+name = "vectorizer"
+harness = false
+
 [profile.release]
+lto = true
+codegen-units = 1
+
+# Benchmarks use the same optimizations as release, plus debug assertions
+# are disabled so criterion measures real performance.
+[profile.bench]
 lto = true
 codegen-units = 1

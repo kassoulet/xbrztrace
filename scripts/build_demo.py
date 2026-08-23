@@ -26,7 +26,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IMAGES_DIR = os.path.join(REPO_ROOT, "demo", "images")
 OUTPUT_DIR = os.path.join(REPO_ROOT, "demo", "output")
 INDEX_PATH = os.path.join(REPO_ROOT, "demo", "index.html")
-BINARY = os.path.join(REPO_ROOT, "target", "release", "brztracer")
+BINARY = os.path.join(REPO_ROOT, "target", "release", "xbrztrace")
 # xBRZ factors to generate per image. Large/noisy sources produce much
 # bigger SVGs, so they get fewer (and smaller) scales.
 IMAGE_SCALES: dict[str, list[int]] = {
@@ -61,7 +61,7 @@ CARD_ORDER: list[str] = [
     "sample_platformer.png",
 ]
 
-PAGE_TITLE = "BRZtracer — pixel art to crisp SVG"
+PAGE_TITLE = "xBRZtrace — pixel art to crisp SVG"
 TAGLINE = (
     "xBRZ upscaling + boundary tracing: every shape below is a vector path, "
     "not a pile of rectangles."
@@ -185,7 +185,7 @@ def svg_stats(path: str) -> dict:
 # ---------------------------------------------------------------------------
 
 def find_binary() -> str | None:
-    exe = "brztracer.exe" if os.name == "nt" else "brztracer"
+    exe = "xbrztrace.exe" if os.name == "nt" else "xbrztrace"
     candidates = [os.path.join(REPO_ROOT, "target", "release", exe)]
     if "CARGO_TARGET_DIR" in os.environ:
         candidates.append(os.path.join(os.environ["CARGO_TARGET_DIR"], "release", exe))
@@ -550,10 +550,10 @@ PAGE_HTML = """<!doctype html>
 <body>
 
 <header class="hero">
-  <div class="brand"><b>BRZ</b>tracer</div>
+  <div class="brand"><b>xBRZ</b>trace</div>
   <h1>Pixel art &rarr; crisp SVG</h1>
   <p class="tagline">__TAGLINE__</p>
-  <div class="usage"><span class="dollar">$ </span>brztracer -i sprite.png -o sprite.svg -s 4x</div>
+  <div class="usage"><span class="dollar">$ </span>xbrztrace -i sprite.png -o sprite.svg -s 4x</div>
 </header>
 
 <main>
@@ -563,7 +563,7 @@ PAGE_HTML = """<!doctype html>
 </main>
 
 <footer>
-  <p>Every SVG on this page was produced by the <code>brztracer</code> release binary
+  <p>Every SVG on this page was produced by the <code>xbrztrace</code> release binary
      from the PNG beside it &mdash; no hand editing.</p>
   <p>Drag the divider to compare the original pixels against the traced vectors;
      use the scale buttons to switch xBRZ factors.</p>
@@ -572,7 +572,7 @@ PAGE_HTML = """<!doctype html>
      <a href="https://kenney.nl/assets/pixel-platformer">Kenney “Pixel Platformer”</a>,
      <a href="https://kenney.nl/assets/1-bit-pack">Kenney “1-Bit Pack”</a> — all CC0,
      public domain — plus the in-house <code>ghost</code> test sprite. See <code>demo/README.md</code>.</p>
-  <p>BRZtracer is MIT licensed.</p>
+  <p>xBRZtrace is MIT licensed.</p>
 </footer>
 
 <script>

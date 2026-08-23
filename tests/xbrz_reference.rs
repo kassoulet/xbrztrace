@@ -11,7 +11,7 @@ mod common;
 
 use std::collections::HashMap;
 
-use brztracer::xbrz_engine::{scale_image, Argb, ArgbImage, ScalerConfig};
+use xbrztrace::xbrz_engine::{scale_image, Argb, ArgbImage, ScalerConfig};
 
 /// Parse the fixture file into a map of (pattern name, factor) -> raw ARGB.
 fn parse_fixtures(text: &str) -> HashMap<(String, u8), Vec<u32>> {

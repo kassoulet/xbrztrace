@@ -39,9 +39,21 @@ fn parse_scale(s: &str) -> Result<Scale, String> {
     }
 }
 
+fn parse_tolerance(s: &str) -> Result<f64, String> {
+    let t: f64 = s
+        .parse()
+        .map_err(|_| format!("invalid quantize tolerance `{s}`: expected a number"))?;
+    if !t.is_finite() || t <= 0.0 {
+        return Err(format!(
+            "quantize tolerance must be a positive number, got {t}"
+        ));
+    }
+    Ok(t)
+}
+
 #[derive(Parser, Debug)]
 #[command(
-    name = "brztracer",
+    name = "xbrztrace",
     version,
     about = "Convert pixel art (PNG/JPEG) into scalable SVG vectors using the xBRZ algorithm"
 )]
@@ -74,6 +86,20 @@ pub struct Cli {
     )]
     pub merge_colors: bool,
 
+    /// Merge near-duplicate colors in the input before scaling and
+    /// vectorization (use for lossy JPEG inputs). Optionally takes a
+    /// tolerance in perceptual color distance; the default is 30, the
+    /// engine's "equal color" threshold.
+    #[arg(
+        short = 'q',
+        long,
+        num_args = 0..=1,
+        default_missing_value = "30",
+        value_name = "TOL",
+        value_parser = parse_tolerance
+    )]
+    pub quantize: Option<f64>,
+
     /// Print timing metrics, input/output dimensions, path counts and file
     /// size stats to stderr.
     #[arg(short, long)]
@@ -88,7 +114,7 @@ mod tests {
     #[test]
     fn cli_parses_all_flags() {
         let cli = Cli::try_parse_from([
-            "brztracer",
+            "xbrztrace",
             "-i",
             "in.png",
             "-o",
@@ -107,7 +133,7 @@ mod tests {
 
     #[test]
     fn cli_defaults() {
-        let cli = Cli::try_parse_from(["brztracer", "-i", "in.png", "-o", "out.svg"]).unwrap();
+        let cli = Cli::try_parse_from(["xbrztrace", "-i", "in.png", "-o", "out.svg"]).unwrap();
         assert_eq!(cli.scale, Scale::X4);
         assert!(cli.merge_colors);
         assert!(!cli.verbose);
@@ -116,7 +142,7 @@ mod tests {
     #[test]
     fn bare_merge_colors_flag_means_true() {
         let cli = Cli::try_parse_from([
-            "brztracer",
+            "xbrztrace",
             "-i",
             "in.png",
             "-o",
@@ -128,8 +154,33 @@ mod tests {
     }
 
     #[test]
+    fn quantize_flag_defaults_and_custom_tolerance() {
+        let bare =
+            Cli::try_parse_from(["xbrztrace", "-i", "in.png", "-o", "out.svg", "--quantize"])
+                .unwrap();
+        assert_eq!(bare.quantize, Some(30.0));
+
+        let custom =
+            Cli::try_parse_from(["xbrztrace", "-i", "in.png", "-o", "out.svg", "-q", "64"])
+                .unwrap();
+        assert_eq!(custom.quantize, Some(64.0));
+
+        let absent = Cli::try_parse_from(["xbrztrace", "-i", "in.png", "-o", "out.svg"]).unwrap();
+        assert_eq!(absent.quantize, None);
+    }
+
+    #[test]
+    fn invalid_quantize_tolerance_is_rejected() {
+        for bad in ["0", "-5", "abc", "nan", "inf"] {
+            let err =
+                Cli::try_parse_from(["xbrztrace", "-i", "a.png", "-o", "b.svg", "--quantize", bad]);
+            assert!(err.is_err(), "tolerance {bad:?} should be rejected");
+        }
+    }
+
+    #[test]
     fn invalid_scale_is_rejected() {
-        let err = Cli::try_parse_from(["brztracer", "-i", "a.png", "-o", "b.svg", "-s", "9x"]);
+        let err = Cli::try_parse_from(["xbrztrace", "-i", "a.png", "-o", "b.svg", "-s", "9x"]);
         assert!(err.is_err());
         let msg = err.unwrap_err().to_string();
         assert!(msg.contains("9x"), "expected error about 9x, got: {msg}");
@@ -137,7 +188,7 @@ mod tests {
 
     #[test]
     fn missing_required_args_is_an_error() {
-        assert!(Cli::try_parse_from(["brztracer"]).is_err());
+        assert!(Cli::try_parse_from(["xbrztrace"]).is_err());
     }
 
     #[test]
