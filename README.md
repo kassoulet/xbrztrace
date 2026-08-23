@@ -223,6 +223,46 @@ and scale-switching (2x/4x/6x) controls. All SVGs are produced by the release
 binary — no hand editing. See [`demo/README.md`](demo/README.md) for image
 credits.
 
+## Comparison with libdepixelize (Kopf-Lischinski)
+
+libdepixelize implements the Kopf-Lischinski algorithm which produces **smooth
+Bézier curves** — ideal for illustrations and photos. xBRZtrace uses the xBRZ
+algorithm which preserves **sharp pixel-art edges** — ideal for sprites and
+pixel art.
+
+| Aspect | libdepixelize | xBRZtrace |
+|--------|---------------|-----------|
+| Output | Same resolution, smooth curves | Upscaled (2x–6x), crisp polygons |
+| Path type | Quadratic Bézier (`Q`/`T`) | Axis-aligned (`H`/`V`/`Z`) |
+| Fill | Per-region with opacity | Consolidated per color |
+| Best for | Illustrations, scans | Pixel art, sprites, game assets |
+
+### Example: Ghost sprite (16×16 → 64×64 at 4x)
+
+| Original | libdepixelize (16×16) | xBRZtrace (64×64, 4x) |
+|----------|----------------------|----------------------|
+| ![ghost](demo/images/ghost.png) | ![libdepixelize](examples/ghost_libdepixelize.svg) | ![xbrztrace](examples/ghost_xbrztrace.svg) |
+
+**libdepixelize** produces a single SVG at original resolution with smooth curves.
+**xBRZtrace** upscales 4× first, then traces — preserving the pixel-perfect
+aesthetic at any display size.
+
+### Example: Ship sprite (32×32 → 128×128 at 4x)
+
+| Original | libdepixelize (32×32) | xBRZtrace (128×128, 4x) |
+|----------|----------------------|----------------------|
+| ![ship-blue](demo/images/ship-blue.png) | ![libdepixelize](examples/ship-blue_libdepixelize.svg) | ![xbrztrace](examples/ship-blue_xbrztrace.svg) |
+
+Run the comparison yourself:
+
+```bash
+# xBRZtrace (4x upscale + trace)
+xbrztrace -i demo/images/ghost.png -o ghost_xbrz.svg -s 4x
+
+# libdepixelize (original resolution, smooth curves)
+depixelize demo/images/ghost.png -o ghost_libdepixelize.svg
+```
+
 ## License
 
 MIT (this project). The xBRZ algorithm is by Zenju; the reference C++
