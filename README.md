@@ -237,30 +237,30 @@ pixel art.
 | Fill | Per-region with opacity | Consolidated per color |
 | Best for | Illustrations, scans | Pixel art, sprites, game assets |
 
-### Example: Ghost sprite (16×16 → 64×64 at 4x)
+### Example: Ghost sprite (16×16 → 96×96 at 6x)
 
-| Original | libdepixelize (16×16) | xBRZtrace (64×64, 4x) |
+| Original | libdepixelize (96×96) | xBRZtrace (96×96, 6x) |
 |----------|----------------------|----------------------|
-| ![ghost](demo/images/ghost.png) | ![libdepixelize](examples/ghost_libdepixelize.svg) | ![xbrztrace](examples/ghost_xbrztrace.svg) |
+| <img src="demo/images/ghost.png" width="96"> | <img src="examples/ghost_libdepixelize.svg" width="96"> | <img src="examples/ghost_xbrztrace.svg" width="96"> |
 
-**libdepixelize** produces a single SVG at original resolution with smooth curves.
-**xBRZtrace** upscales 4× first, then traces — preserving the pixel-perfect
-aesthetic at any display size.
+**libdepixelize** runs on a 6× nearest-neighbor upscale, producing smooth curves at the target resolution.
+**xBRZtrace** uses xBRZ 6× upscale + trace — preserving the pixel-perfect aesthetic at any display size.
 
-### Example: Ship sprite (32×32 → 128×128 at 4x)
+### Example: Ship sprite (32×32 → 192×192 at 6x)
 
-| Original | libdepixelize (32×32) | xBRZtrace (128×128, 4x) |
+| Original | libdepixelize (192×192) | xBRZtrace (192×192, 6x) |
 |----------|----------------------|----------------------|
-| ![ship-blue](demo/images/ship-blue.png) | ![libdepixelize](examples/ship-blue_libdepixelize.svg) | ![xbrztrace](examples/ship-blue_xbrztrace.svg) |
+| <img src="demo/images/ship-blue.png" width="192"> | <img src="examples/ship-blue_libdepixelize.svg" width="192"> | <img src="examples/ship-blue_xbrztrace.svg" width="192"> |
 
 Run the comparison yourself:
 
 ```bash
-# xBRZtrace (4x upscale + trace)
-xbrztrace -i demo/images/ghost.png -o ghost_xbrz.svg -s 4x
+# xBRZtrace (6x upscale + trace)
+xbrztrace -i demo/images/ghost.png -o ghost_xbrz.svg -s 6x
 
-# libdepixelize (original resolution, smooth curves)
-depixelize demo/images/ghost.png -o ghost_libdepixelize.svg
+# libdepixelize (on 6× upscaled input for same target size)
+magick demo/images/ghost.png -scale 600% -interpolate Nearest -filter Point /tmp/ghost_6x.png
+depixelize /tmp/ghost_6x.png -o ghost_libdepixelize.svg
 ```
 
 ## License
