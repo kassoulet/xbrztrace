@@ -9,3 +9,6 @@
 
 # Scratch test images (unlicensed, not part of the project)
 /tmp
+
+# Python bytecode
+__pycache__/

@@ -55,7 +55,7 @@ pub fn detect_integer_zoom(img: &ArgbImage) -> ZoomInfo {
 
     for factor in (2..=MAX_FACTOR).rev() {
         let factor = factor as usize;
-        if img.width % factor != 0 || img.height % factor != 0 {
+        if !img.width.is_multiple_of(factor) || !img.height.is_multiple_of(factor) {
             continue;
         }
 

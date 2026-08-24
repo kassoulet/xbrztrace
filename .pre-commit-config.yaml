@@ -2,15 +2,25 @@ repos:
   - repo: https://github.com/doublify/pre-commit-rust
     rev: v1.0
     hooks:
-      - id: fmt
-        args: [--all, --check]
-      - id: cargo-clippy
-        args: [--all-targets, --, -D, warnings]
       - id: cargo-check
         args: [--all-targets]
 
   - repo: local
     hooks:
+      - id: fmt
+        name: cargo fmt
+        entry: cargo fmt --all -- --check
+        language: system
+        types: [rust]
+        pass_filenames: false
+
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: cargo clippy --all-targets -- -D warnings
+        language: system
+        types: [rust]
+        pass_filenames: false
+
       - id: cargo-test
         name: Run tests
         entry: cargo test --all-targets
@@ -34,7 +44,7 @@ repos:
 
       - id: smoke-test
         name: Smoke test demo pipeline
-        entry: bash -c './target/release/xbrztrace -i demo/images/character.png -o /tmp/smoke.svg -s 4x && test -s /tmp/smoke.svg'
+        entry: bash -c 'bin="${CARGO_TARGET_DIR:-./target}/release/xbrztrace" && "$bin" -i demo/images/character.png -o /tmp/smoke.svg -s 4x && test -s /tmp/smoke.svg'
         language: system
         types: [rust]
         pass_filenames: false

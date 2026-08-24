@@ -42,7 +42,12 @@ IMAGE_SCALES: dict[str, list[int]] = {
     "tilemap.png": [2, 4],
     # Big game screenshot; 2x is plenty for on-page display.
     "sample_platformer.png": [2],
+    # Sanity logo; large source, 4x only.
+    "logo_36.png": [4],
 }
+
+# Cards rendered full-width with a tall compare area (for large images).
+FULLWIDTH_CARDS: set[str] = {"logo_36.png"}
 
 DEFAULT_SCALES = [2, 4, 6]
 
@@ -59,6 +64,7 @@ CARD_ORDER: list[str] = [
     "ghost.png",
     "tilemap.png",
     "sample_platformer.png",
+    "logo_36.png",
 ]
 
 PAGE_TITLE = "xBRZtrace — pixel art to crisp SVG"
@@ -285,13 +291,15 @@ def _render_card(entry: dict) -> str:
     # Default scale the JS selects first: 4x when available, else the smallest.
     keys = list(entry["scales"])
     default = "4x" if "4x" in keys else keys[0]
+    card_cls = "card card-wide" if name in {os.path.splitext(f)[0] for f in FULLWIDTH_CARDS} else "card"
+    cmp_cls = "compare compare-tall" if name in {os.path.splitext(f)[0] for f in FULLWIDTH_CARDS} else "compare"
     return f"""
-      <section class="card">
+      <section class="{card_cls}">
         <header class="card-head">
           <h2>{name}</h2>
           <span class="badge">{badge}</span>
         </header>
-        <div class="compare">
+        <div class="{cmp_cls}">
           <img class="layer orig" src="images/{entry['file']}" alt="{name} original">
           <div class="layer svgclip">
             <img class="svgimg" src="output/{name}_{default}.svg" alt="{name} as SVG">
@@ -407,6 +415,8 @@ PAGE_HTML = """<!doctype html>
     white-space: nowrap;
   }
 
+  .card-wide { grid-column: 1 / -1; }
+
   /* -------- before/after compare -------- */
   .compare {
     position: relative;
@@ -420,6 +430,7 @@ PAGE_HTML = """<!doctype html>
     user-select: none;
     -webkit-user-select: none;
   }
+  .compare-tall { height: 720px; }
   .compare .layer {
     position: absolute;
     inset: 0;
@@ -571,7 +582,9 @@ PAGE_HTML = """<!doctype html>
      (<code>ship-blue</code>, <code>ship-red</code>, <code>ship-green</code>, <code>asteroid</code>, <code>gem</code>),
      <a href="https://kenney.nl/assets/pixel-platformer">Kenney “Pixel Platformer”</a>,
      <a href="https://kenney.nl/assets/1-bit-pack">Kenney “1-Bit Pack”</a> — all CC0,
-     public domain — plus the in-house <code>ghost</code> test sprite. See <code>demo/README.md</code>.</p>
+      public domain — plus the in-house <code>ghost</code> test sprite and the
+      <code>logo_36</code> Sanity logo by <a href="https://demozoo.org/sceners/304/">RA&nbsp;of&nbsp;Sanity</a>.
+      See <code>demo/README.md</code>.</p>
   <p>xBRZtrace is MIT licensed.</p>
 </footer>
 

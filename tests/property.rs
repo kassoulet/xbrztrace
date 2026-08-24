@@ -15,12 +15,12 @@ mod common;
 
 use std::collections::HashSet;
 
+use proptest::prelude::*;
 use xbrztrace::optimizer::optimize;
 use xbrztrace::quantize::quantize;
 use xbrztrace::svg_exporter::export;
 use xbrztrace::vectorizer::vectorize;
 use xbrztrace::xbrz_engine::{color_dist, scale_image, Argb, ArgbImage, ScalerConfig};
-use proptest::prelude::*;
 
 /// A fully opaque random color.
 fn any_opaque() -> impl Strategy<Value = Argb> {

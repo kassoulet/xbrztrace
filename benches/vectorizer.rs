@@ -2,11 +2,11 @@
 //!
 //! Run with: `cargo bench --bench vectorizer`
 
+use criterion::{criterion_group, criterion_main, Criterion};
 use xbrztrace::optimizer::optimize;
 use xbrztrace::svg_exporter::export;
 use xbrztrace::vectorizer::vectorize;
 use xbrztrace::xbrz_engine::{scale_image, ScalerConfig};
-use criterion::{criterion_group, criterion_main, Criterion};
 
 #[path = "support.rs"]
 mod support;

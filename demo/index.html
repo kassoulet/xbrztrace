@@ -93,6 +93,8 @@
     white-space: nowrap;
   }
 
+  .card-wide { grid-column: 1 / -1; }
+
   /* -------- before/after compare -------- */
   .compare {
     position: relative;
@@ -106,6 +108,7 @@
     user-select: none;
     -webkit-user-select: none;
   }
+  .compare-tall { height: 720px; }
   .compare .layer {
     position: absolute;
     inset: 0;
@@ -519,6 +522,31 @@
           <li><b class="st-ratio"></b><span>vs &lt;rect&gt;s</span></li>
         </ul>
       </section>
+
+      <section class="card card-wide">
+        <header class="card-head">
+          <h2>logo_36</h2>
+          <span class="badge">320×256px · 28 colors</span>
+        </header>
+        <div class="compare compare-tall">
+          <img class="layer orig" src="images/logo_36.png" alt="logo_36 original">
+          <div class="layer svgclip">
+            <img class="svgimg" src="output/logo_36_4x.svg" alt="logo_36 as SVG">
+          </div>
+          <div class="divider" aria-hidden="true"><span></span></div>
+        </div>
+        <div class="controls">
+          <span class="ctl-label">scale</span>
+          <span class="scale-btns"></span>
+          <span class="out-size"></span>
+        </div>
+        <ul class="stats">
+          <li><b class="st-paths"></b><span>paths</span></li>
+          <li><b class="st-loops"></b><span>loops</span></li>
+          <li><b class="st-size"></b><span>svg size</span></li>
+          <li><b class="st-ratio"></b><span>vs &lt;rect&gt;s</span></li>
+        </ul>
+      </section>
   </div>
 </main>
 
@@ -531,12 +559,14 @@
      (<code>ship-blue</code>, <code>ship-red</code>, <code>ship-green</code>, <code>asteroid</code>, <code>gem</code>),
      <a href="https://kenney.nl/assets/pixel-platformer">Kenney “Pixel Platformer”</a>,
      <a href="https://kenney.nl/assets/1-bit-pack">Kenney “1-Bit Pack”</a> — all CC0,
-     public domain — plus the in-house <code>ghost</code> test sprite. See <code>demo/README.md</code>.</p>
+      public domain — plus the in-house <code>ghost</code> test sprite and the
+      <code>logo_36</code> Sanity logo by <a href="https://demozoo.org/sceners/304/">RA&nbsp;of&nbsp;Sanity</a>.
+      See <code>demo/README.md</code>.</p>
   <p>xBRZtrace is MIT licensed.</p>
 </footer>
 
 <script>
-const DATA = [{"name":"ship-blue","file":"ship-blue.png","src_w":32,"src_h":32,"src_colors":7,"scales":{"2x":{"out_w":64,"out_h":64,"paths":30,"loops":227,"bytes":6287},"4x":{"out_w":128,"out_h":128,"paths":40,"loops":505,"bytes":13039},"6x":{"out_w":192,"out_h":192,"paths":50,"loops":787,"bytes":20966}}},{"name":"ship-red","file":"ship-red.png","src_w":32,"src_h":32,"src_colors":7,"scales":{"2x":{"out_w":64,"out_h":64,"paths":31,"loops":253,"bytes":6798},"4x":{"out_w":128,"out_h":128,"paths":43,"loops":527,"bytes":13744},"6x":{"out_w":192,"out_h":192,"paths":52,"loops":802,"bytes":21885}}},{"name":"ship-green","file":"ship-green.png","src_w":32,"src_h":32,"src_colors":6,"scales":{"2x":{"out_w":64,"out_h":64,"paths":28,"loops":189,"bytes":5498},"4x":{"out_w":128,"out_h":128,"paths":34,"loops":389,"bytes":10146},"6x":{"out_w":192,"out_h":192,"paths":39,"loops":587,"bytes":16263}}},{"name":"asteroid","file":"asteroid.png","src_w":16,"src_h":16,"src_colors":3,"scales":{"2x":{"out_w":32,"out_h":32,"paths":8,"loops":91,"bytes":2240},"4x":{"out_w":64,"out_h":64,"paths":10,"loops":187,"bytes":4306},"6x":{"out_w":96,"out_h":96,"paths":12,"loops":283,"bytes":6289}}},{"name":"gem","file":"gem.png","src_w":16,"src_h":16,"src_colors":4,"scales":{"2x":{"out_w":32,"out_h":32,"paths":12,"loops":103,"bytes":2791},"4x":{"out_w":64,"out_h":64,"paths":13,"loops":211,"bytes":5240},"6x":{"out_w":96,"out_h":96,"paths":14,"loops":319,"bytes":7639}}},{"name":"character","file":"character.png","src_w":18,"src_h":18,"src_colors":3,"scales":{"2x":{"out_w":36,"out_h":36,"paths":12,"loops":51,"bytes":1853},"4x":{"out_w":72,"out_h":72,"paths":16,"loops":107,"bytes":3340},"6x":{"out_w":108,"out_h":108,"paths":20,"loops":163,"bytes":4725}}},{"name":"creature","file":"creature.png","src_w":18,"src_h":18,"src_colors":5,"scales":{"2x":{"out_w":36,"out_h":36,"paths":18,"loops":75,"bytes":2442},"4x":{"out_w":72,"out_h":72,"paths":23,"loops":157,"bytes":4528},"6x":{"out_w":108,"out_h":108,"paths":28,"loops":241,"bytes":6503}}},{"name":"hero","file":"hero.png","src_w":18,"src_h":18,"src_colors":7,"scales":{"2x":{"out_w":36,"out_h":36,"paths":16,"loops":53,"bytes":1849},"4x":{"out_w":72,"out_h":72,"paths":20,"loops":133,"bytes":3663},"6x":{"out_w":108,"out_h":108,"paths":24,"loops":213,"bytes":5468}}},{"name":"ghost","file":"ghost.png","src_w":16,"src_h":16,"src_colors":5,"scales":{"2x":{"out_w":32,"out_h":32,"paths":14,"loops":46,"bytes":1747},"4x":{"out_w":64,"out_h":64,"paths":18,"loops":96,"bytes":3012},"6x":{"out_w":96,"out_h":96,"paths":22,"loops":148,"bytes":4199}}},{"name":"tilemap","file":"tilemap.png","src_w":379,"src_h":170,"src_colors":28,"scales":{"2x":{"out_w":758,"out_h":340,"paths":282,"loops":11661,"bytes":313763},"4x":{"out_w":1516,"out_h":680,"paths":365,"loops":25353,"bytes":723104}}},{"name":"sample_platformer","file":"sample_platformer.png","src_w":918,"src_h":515,"src_colors":255,"scales":{"2x":{"out_w":1836,"out_h":1030,"paths":2686,"loops":33735,"bytes":986382}}}];
+const DATA = [{"name":"ship-blue","file":"ship-blue.png","src_w":32,"src_h":32,"src_colors":7,"scales":{"2x":{"out_w":64,"out_h":64,"paths":30,"loops":227,"bytes":6287},"4x":{"out_w":128,"out_h":128,"paths":40,"loops":505,"bytes":13039},"6x":{"out_w":192,"out_h":192,"paths":50,"loops":787,"bytes":20966}}},{"name":"ship-red","file":"ship-red.png","src_w":32,"src_h":32,"src_colors":7,"scales":{"2x":{"out_w":64,"out_h":64,"paths":31,"loops":253,"bytes":6798},"4x":{"out_w":128,"out_h":128,"paths":43,"loops":527,"bytes":13744},"6x":{"out_w":192,"out_h":192,"paths":52,"loops":802,"bytes":21885}}},{"name":"ship-green","file":"ship-green.png","src_w":32,"src_h":32,"src_colors":6,"scales":{"2x":{"out_w":64,"out_h":64,"paths":28,"loops":189,"bytes":5498},"4x":{"out_w":128,"out_h":128,"paths":34,"loops":389,"bytes":10146},"6x":{"out_w":192,"out_h":192,"paths":39,"loops":587,"bytes":16263}}},{"name":"asteroid","file":"asteroid.png","src_w":16,"src_h":16,"src_colors":3,"scales":{"2x":{"out_w":32,"out_h":32,"paths":8,"loops":91,"bytes":2240},"4x":{"out_w":64,"out_h":64,"paths":10,"loops":187,"bytes":4306},"6x":{"out_w":96,"out_h":96,"paths":12,"loops":283,"bytes":6289}}},{"name":"gem","file":"gem.png","src_w":16,"src_h":16,"src_colors":4,"scales":{"2x":{"out_w":32,"out_h":32,"paths":12,"loops":103,"bytes":2791},"4x":{"out_w":64,"out_h":64,"paths":13,"loops":211,"bytes":5240},"6x":{"out_w":96,"out_h":96,"paths":14,"loops":319,"bytes":7639}}},{"name":"character","file":"character.png","src_w":18,"src_h":18,"src_colors":3,"scales":{"2x":{"out_w":36,"out_h":36,"paths":12,"loops":51,"bytes":1853},"4x":{"out_w":72,"out_h":72,"paths":16,"loops":107,"bytes":3340},"6x":{"out_w":108,"out_h":108,"paths":20,"loops":163,"bytes":4725}}},{"name":"creature","file":"creature.png","src_w":18,"src_h":18,"src_colors":5,"scales":{"2x":{"out_w":36,"out_h":36,"paths":18,"loops":75,"bytes":2442},"4x":{"out_w":72,"out_h":72,"paths":23,"loops":157,"bytes":4528},"6x":{"out_w":108,"out_h":108,"paths":28,"loops":241,"bytes":6503}}},{"name":"hero","file":"hero.png","src_w":18,"src_h":18,"src_colors":7,"scales":{"2x":{"out_w":36,"out_h":36,"paths":16,"loops":53,"bytes":1849},"4x":{"out_w":72,"out_h":72,"paths":20,"loops":133,"bytes":3663},"6x":{"out_w":108,"out_h":108,"paths":24,"loops":213,"bytes":5468}}},{"name":"ghost","file":"ghost.png","src_w":16,"src_h":16,"src_colors":5,"scales":{"2x":{"out_w":32,"out_h":32,"paths":14,"loops":46,"bytes":1747},"4x":{"out_w":64,"out_h":64,"paths":18,"loops":96,"bytes":3012},"6x":{"out_w":96,"out_h":96,"paths":22,"loops":148,"bytes":4199}}},{"name":"tilemap","file":"tilemap.png","src_w":379,"src_h":170,"src_colors":28,"scales":{"2x":{"out_w":758,"out_h":340,"paths":282,"loops":11661,"bytes":313763},"4x":{"out_w":1516,"out_h":680,"paths":365,"loops":25353,"bytes":723104}}},{"name":"sample_platformer","file":"sample_platformer.png","src_w":918,"src_h":515,"src_colors":255,"scales":{"2x":{"out_w":1836,"out_h":1030,"paths":2686,"loops":33735,"bytes":986382}}},{"name":"logo_36","file":"logo_36.png","src_w":320,"src_h":256,"src_colors":28,"scales":{"4x":{"out_w":1280,"out_h":1024,"paths":1228,"loops":44381,"bytes":1243975}}}];
 const grid = document.querySelector(".grid");
 
 function fmtBytes(n) {

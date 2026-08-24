@@ -2,8 +2,8 @@
 //!
 //! Run with: `cargo bench --bench xbrz`
 
-use xbrztrace::xbrz_engine::{scale_image, ScalerConfig};
 use criterion::{criterion_group, criterion_main, Criterion};
+use xbrztrace::xbrz_engine::{scale_image, ScalerConfig};
 
 #[path = "support.rs"]
 mod support;

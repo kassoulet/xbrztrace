@@ -42,6 +42,8 @@ https://creativecommons.org/publicdomain/zero/1.0/):
   https://kenney.nl/assets/1-bit-pack
 - **`ghost.png`** — a 16x16 test sprite drawn for xBRZtrace's own test suite
   (see `tests/common/mod.rs`); shown here as the in-house example.
+- **`logo_36.png`** — the Sanity logo, pixel art by RA of Sanity. Used with
+  attribution; not under CC0.
 
 Credit for the Kenney assets: *"Kenney" or www.kenney.nl (appreciated, not
 required).*
