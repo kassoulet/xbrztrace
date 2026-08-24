@@ -37,7 +37,14 @@ pub fn export(regions: &[Region], width: usize, height: usize) -> String {
         if region.color.a() < 255 {
             write!(svg, " fill-opacity=\"{}\"", region.color.a() as f64 / 255.0).unwrap();
         }
-        svg.push_str(" fill-rule=\"evenodd\"/>\n");
+        // `fill-rule="evenodd"` only matters when a path carries multiple
+        // subpaths (holes or disconnected loops of one color); for a single
+        // loop the default `nonzero` rule fills identically, so the
+        // attribute is dropped (SVGO's removeUnknownsAndDefaults style).
+        if region.loops.len() > 1 {
+            svg.push_str(" fill-rule=\"evenodd\"");
+        }
+        svg.push_str("/>\n");
     }
     svg.push_str("</svg>\n");
     svg
@@ -118,6 +125,32 @@ mod tests {
             svg,
             "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"8\" height=\"8\" viewBox=\"0 0 8 8\" shape-rendering=\"crispEdges\">\n</svg>\n"
         );
+    }
+
+    #[test]
+    fn single_loop_path_omits_redundant_fill_rule() {
+        let img = ArgbImage::new(1, 1, vec![Argb::from_rgba(1, 2, 3, 255)]);
+        let svg = export(&vectorize(&img, true), 1, 1);
+        assert!(svg.contains("fill=\"#010203\""));
+        assert!(!svg.contains("fill-rule"), "single loop needs no fill-rule");
+    }
+
+    #[test]
+    fn multi_loop_path_keeps_evenodd_fill_rule() {
+        // Two loops of one color: one region with two subpaths, which needs
+        // even-odd fill to render holes correctly.
+        let loop_a = PathLoop {
+            points: vec![(0, 0), (2, 0), (2, 2), (0, 2)],
+        };
+        let loop_b = PathLoop {
+            points: vec![(4, 4), (6, 4), (6, 6), (4, 6)],
+        };
+        let regions = vec![Region {
+            color: Argb::from_rgba(0, 0, 0, 255),
+            loops: vec![loop_a, loop_b],
+        }];
+        let svg = export(&regions, 8, 8);
+        assert!(svg.contains("fill-rule=\"evenodd\""));
     }
 
     #[test]

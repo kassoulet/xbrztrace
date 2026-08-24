@@ -1,7 +1,7 @@
 # xBRZtrace
 
-A high-performance CLI that converts pixel art (PNG/JPEG) into **scalable SVG
-vectors** using the [xBRZ](https://en.wikipedia.org/wiki/Pixel-art_scaling_algorithms#xBRZ_family)
+A CLI that converts pixel art (PNG/JPEG) into **scalable SVG vectors**
+using the [xBRZ](https://en.wikipedia.org/wiki/Pixel-art_scaling_algorithms#xBRZ_family)
 pixel-art upscaling algorithm.
 
 ```
@@ -241,7 +241,7 @@ pixel art.
 
 | Original | libdepixelize (96×96) | xBRZtrace (96×96, 6x) |
 |----------|----------------------|----------------------|
-| <img src="demo/images/ghost.png" width="96"> | <img src="examples/ghost_libdepixelize.svg" width="96"> | <img src="examples/ghost_xbrztrace.svg" width="96"> |
+| <img src="demo/images/ghost.png" width="96" style="image-rendering: pixelated"> | <img src="examples/ghost_libdepixelize.svg" width="96"> | <img src="examples/ghost_xbrztrace.svg" width="96"> |
 
 **libdepixelize** runs on a 6× nearest-neighbor upscale, producing smooth curves at the target resolution.
 **xBRZtrace** uses xBRZ 6× upscale + trace — preserving the pixel-perfect aesthetic at any display size.
@@ -250,7 +250,7 @@ pixel art.
 
 | Original | libdepixelize (192×192) | xBRZtrace (192×192, 6x) |
 |----------|----------------------|----------------------|
-| <img src="demo/images/ship-blue.png" width="192"> | <img src="examples/ship-blue_libdepixelize.svg" width="192"> | <img src="examples/ship-blue_xbrztrace.svg" width="192"> |
+| <img src="demo/images/ship-blue.png" width="192" style="image-rendering: pixelated"> | <img src="examples/ship-blue_libdepixelize.svg" width="192"> | <img src="examples/ship-blue_xbrztrace.svg" width="192"> |
 
 Run the comparison yourself:
 

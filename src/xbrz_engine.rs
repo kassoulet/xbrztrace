@@ -135,8 +135,11 @@ fn dist_ycbcr(p1: Argb, p2: Argb) -> f64 {
 ///
 /// Note: like the reference implementation's fast path, `luminance_weight`
 /// is not applied here (the YCbCr distance is computed with a fixed weight).
+///
+/// Public so other stages (e.g. color quantization) share the engine's
+/// notion of "similar color".
 #[inline]
-fn color_dist(p1: Argb, p2: Argb) -> f64 {
+pub fn color_dist(p1: Argb, p2: Argb) -> f64 {
     let d = dist_ycbcr(p1, p2);
     let a1 = p1.a() as f64 / 255.0;
     let a2 = p2.a() as f64 / 255.0;
