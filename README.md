@@ -267,9 +267,17 @@ depixelize /tmp/ghost_6x.png -o ghost_libdepixelize.svg
 
 Pixel art by RA of Sanity.
 
-| Original | libdepixelize (320×256) | xBRZtrace (1280×1024, 4x) |
-|----------|------------------------|--------------------------|
-| <img src="demo/images/logo_36.png" width="256" style="image-rendering: pixelated"> | <img src="examples/logo_36_libdepixelize.svg" width="256"> | <img src="demo/output/logo_36_4x.svg" width="256"> |
+Original:
+
+<img src="demo/images/logo_36.png" width="640" style="image-rendering: pixelated">
+
+xBRZtrace (4x):
+
+<img src="demo/output/logo_36_4x.svg" width="640">
+
+libdepixelize (same resolution):
+
+<img src="examples/logo_36_libdepixelize.svg" width="640">
 
 ## License
 
