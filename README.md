@@ -263,6 +263,14 @@ magick demo/images/ghost.png -scale 600% -interpolate Nearest -filter Point /tmp
 depixelize /tmp/ghost_6x.png -o ghost_libdepixelize.svg
 ```
 
+### Example: Sanity logo (320×256 → 1280×1024 at 4x)
+
+Pixel art by RA of Sanity.
+
+| Original | libdepixelize (320×256) | xBRZtrace (1280×1024, 4x) |
+|----------|------------------------|--------------------------|
+| <img src="demo/images/logo_36.png" width="256" style="image-rendering: pixelated"> | <img src="examples/logo_36_libdepixelize.svg" width="256"> | <img src="demo/output/logo_36_4x.svg" width="256"> |
+
 ## License
 
 MIT (this project). The xBRZ algorithm is by Zenju; the reference C++
