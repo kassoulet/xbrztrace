@@ -226,31 +226,13 @@ credits.
 ## Comparison with libdepixelize (Kopf-Lischinski)
 
 libdepixelize implements the Kopf-Lischinski algorithm which produces **smooth
-Bézier curves** — ideal for illustrations and photos. xBRZtrace uses the xBRZ
-algorithm which preserves **sharp pixel-art edges** — ideal for sprites and
-pixel art.
-
-| Aspect | libdepixelize | xBRZtrace |
-|--------|---------------|-----------|
-| Output | Same resolution, smooth curves | Upscaled (2x–6x), crisp polygons |
-| Path type | Quadratic Bézier (`Q`/`T`) | Axis-aligned (`H`/`V`/`Z`) |
-| Fill | Per-region with opacity | Consolidated per color |
-| Best for | Illustrations, scans | Pixel art, sprites, game assets |
-
-### Example: Ghost sprite (16×16 → 96×96 at 6x)
-
-| Original | libdepixelize (96×96) | xBRZtrace (96×96, 6x) |
-|----------|----------------------|----------------------|
-| <img src="demo/images/ghost.png" width="96" style="image-rendering: pixelated"> | <img src="examples/ghost_libdepixelize.svg" width="96"> | <img src="examples/ghost_xbrztrace.svg" width="96"> |
-
-**libdepixelize** runs on a 6× nearest-neighbor upscale, producing smooth curves at the target resolution.
-**xBRZtrace** uses xBRZ 6× upscale + trace — preserving the pixel-perfect aesthetic at any display size.
+Bézier curves**. xBRZtrace uses the xBRZ algorithm which preserves **sharp pixel-art edges**.
 
 ### Example: Ship sprite (32×32 → 192×192 at 6x)
 
 | Original | libdepixelize (192×192) | xBRZtrace (192×192, 6x) |
 |----------|----------------------|----------------------|
-| <img src="demo/images/ship-blue.png" width="192" style="image-rendering: pixelated"> | <img src="examples/ship-blue_libdepixelize.svg" width="192"> | <img src="examples/ship-blue_xbrztrace.svg" width="192"> |
+| <img src="demo/images/ship-blue-6x.png" width="192" style="image-rendering: pixelated"> | <img src="examples/ship-blue_libdepixelize.svg" width="192"> | <img src="examples/ship-blue_xbrztrace.svg" width="192"> |
 
 Run the comparison yourself:
 
