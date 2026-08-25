@@ -232,7 +232,7 @@ Bézier curves**. xBRZtrace uses the xBRZ algorithm which preserves **sharp pixe
 
 | Original | libdepixelize (192×192) | xBRZtrace (192×192, 6x) |
 |----------|----------------------|----------------------|
-| <img src="demo/images/ship-blue-6x.png" width="192" style="image-rendering: pixelated"> | <img src="examples/ship-blue_libdepixelize.svg" width="192"> | <img src="examples/ship-blue_xbrztrace.svg" width="192"> |
+| <img src="demo/images/ship-blue.png" width="192" style="image-rendering: pixelated"> | <img src="examples/ship-blue_libdepixelize.svg" width="192"> | <img src="examples/ship-blue_xbrztrace.svg" width="192"> |
 
 Run the comparison yourself:
 
