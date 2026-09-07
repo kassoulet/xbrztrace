@@ -44,6 +44,7 @@ const EDGE_LEFT: u8 = 3; // traversed S (interior east)
 
 /// The directed edge of `(x, y)`'s pixel with the pixel interior on the left
 /// starts at this vertex.
+#[inline]
 fn start_vertex(x: i32, y: i32, edge: u8) -> (i32, i32) {
     match edge {
         EDGE_TOP => (x + 1, y),
@@ -53,6 +54,7 @@ fn start_vertex(x: i32, y: i32, edge: u8) -> (i32, i32) {
     }
 }
 
+#[inline]
 fn edge_direction(edge: u8) -> u8 {
     match edge {
         EDGE_TOP => W,
@@ -65,6 +67,7 @@ fn edge_direction(edge: u8) -> u8 {
 /// The pixel that owns the directed edge starting at vertex `(vx, vy)` in
 /// direction `d` (the pixel on the left of travel), and which of its edges
 /// it is.
+#[inline]
 fn owner(vx: i32, vy: i32, d: u8) -> (i32, i32, u8) {
     match d {
         E => (vx, vy - 1, EDGE_BOTTOM),
@@ -76,6 +79,7 @@ fn owner(vx: i32, vy: i32, d: u8) -> (i32, i32, u8) {
 
 /// The pixel adjacent on the right of travel of the directed edge starting
 /// at vertex `(vx, vy)` in direction `d`.
+#[inline]
 fn right_neighbor(vx: i32, vy: i32, d: u8) -> (i32, i32) {
     match d {
         E => (vx, vy),
@@ -89,6 +93,7 @@ fn right_neighbor(vx: i32, vy: i32, d: u8) -> (i32, i32) {
 /// edge of the region of `color`? Requires the owner pixel (interior, on the
 /// left) to have `color` and the right neighbor to differ (or be out of
 /// bounds).
+#[inline]
 fn edge_is_boundary(img: &ArgbImage, color: Argb, vx: i32, vy: i32, d: u8) -> bool {
     let (ox, oy, _) = owner(vx, vy, d);
     let (rw, rh) = (img.width as i32, img.height as i32);
@@ -105,6 +110,7 @@ fn edge_is_boundary(img: &ArgbImage, color: Argb, vx: i32, vy: i32, d: u8) -> bo
     img.get(rx as usize, ry as usize) != color
 }
 
+#[inline]
 fn is_visited(visited: &[u8], vx: i32, vy: i32, d: u8, w: i32, h: i32) -> bool {
     let (ox, oy, oedge) = owner(vx, vy, d);
     if ox < 0 || oy < 0 || ox >= w || oy >= h {
@@ -113,9 +119,28 @@ fn is_visited(visited: &[u8], vx: i32, vy: i32, d: u8, w: i32, h: i32) -> bool {
     visited[oy as usize * w as usize + ox as usize] & (1 << oedge) != 0
 }
 
+#[inline]
 fn mark_visited(visited: &mut [u8], vx: i32, vy: i32, d: u8, w: i32) {
     let (ox, oy, oedge) = owner(vx, vy, d);
     visited[oy as usize * w as usize + ox as usize] |= 1 << oedge;
+}
+
+/// Fast boundary check during the outer `vectorize` scan over pixel `(x, y)`:
+/// since `(x, y)` is the owner pixel (in bounds and equal to `color`), we only
+/// need to check if the right neighbor pixel in direction `edge` differs from `color`.
+#[inline]
+fn pixel_edge_is_boundary(img: &ArgbImage, x: i32, y: i32, color: Argb, edge: u8) -> bool {
+    let (rx, ry) = match edge {
+        EDGE_TOP => (x, y - 1),
+        EDGE_RIGHT => (x + 1, y),
+        EDGE_BOTTOM => (x, y + 1),
+        _ => (x - 1, y),
+    };
+    let (rw, rh) = (img.width as i32, img.height as i32);
+    if rx < 0 || ry < 0 || rx >= rw || ry >= rh {
+        return true;
+    }
+    img.get(rx as usize, ry as usize) != color
 }
 
 /// Trace one closed boundary loop of the color of the pixel at `(px, py)`,
@@ -213,8 +238,7 @@ pub fn vectorize(img: &ArgbImage, merge_colors: bool) -> Vec<Region> {
                 if visited[base as usize] & (1 << edge) != 0 {
                     continue;
                 }
-                let (sx, sy) = start_vertex(x as i32, y as i32, edge);
-                if !edge_is_boundary(img, color, sx, sy, edge_direction(edge)) {
+                if !pixel_edge_is_boundary(img, x as i32, y as i32, color, edge) {
                     continue;
                 }
                 let raw = trace_loop(img, &mut visited, x as i32, y as i32, edge);
