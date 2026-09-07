@@ -57,19 +57,52 @@ fn hex_color(color: Argb) -> String {
 /// Append the path data (`M`/`H`/`V`/`L`/`Z`) for one loop. Consecutive
 /// collinear segments were already merged by the vectorizer, so horizontal
 /// and vertical runs emit as single `H`/`V` commands.
+#[inline]
+fn push_i32(s: &mut String, mut n: i32) {
+    if n == 0 {
+        s.push('0');
+        return;
+    }
+    if n < 0 {
+        s.push('-');
+        n = -n;
+    }
+    let mut buf = [0u8; 11];
+    let mut i = 11;
+    while n > 0 {
+        i -= 1;
+        buf[i] = b'0' + (n % 10) as u8;
+        n /= 10;
+    }
+    // SAFETY: buf contains only ASCII characters ('0'..'9' or '-')
+    s.push_str(unsafe { std::str::from_utf8_unchecked(&buf[i..]) });
+}
+
+/// Append the path data (`M`/`H`/`V`/`L`/`Z`) for one loop. Consecutive
+/// collinear segments were already merged by the vectorizer, so horizontal
+/// and vertical runs emit as single `H`/`V` commands.
 fn write_path_data(d: &mut String, loop_: &crate::vectorizer::PathLoop) {
     let points = &loop_.points;
     debug_assert!(points.len() >= 3);
-    write!(d, "M{} {}", points[0].0, points[0].1).unwrap();
+    d.push('M');
+    push_i32(d, points[0].0);
+    d.push(' ');
+    push_i32(d, points[0].1);
+
     for pair in points.windows(2) {
         let (px, py) = pair[0];
         let (cx, cy) = pair[1];
         if py == cy {
-            write!(d, "H{}", cx).unwrap();
+            d.push('H');
+            push_i32(d, cx);
         } else if px == cx {
-            write!(d, "V{}", cy).unwrap();
+            d.push('V');
+            push_i32(d, cy);
         } else {
-            write!(d, "L{} {}", cx, cy).unwrap();
+            d.push('L');
+            push_i32(d, cx);
+            d.push(' ');
+            push_i32(d, cy);
         }
     }
     d.push('Z');
