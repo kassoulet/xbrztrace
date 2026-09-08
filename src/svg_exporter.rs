@@ -58,23 +58,23 @@ fn hex_color(color: Argb) -> String {
 /// collinear segments were already merged by the vectorizer, so horizontal
 /// and vertical runs emit as single `H`/`V` commands.
 #[inline]
-fn push_i32(s: &mut String, mut n: i32) {
+fn push_i32(s: &mut String, n: i32) {
     if n == 0 {
         s.push('0');
         return;
     }
     if n < 0 {
         s.push('-');
-        n = -n;
     }
-    let mut buf = [0u8; 11];
-    let mut i = 11;
-    while n > 0 {
+    let mut val = n.unsigned_abs();
+    let mut buf = [0u8; 10];
+    let mut i = 10;
+    while val > 0 {
         i -= 1;
-        buf[i] = b'0' + (n % 10) as u8;
-        n /= 10;
+        buf[i] = b'0' + (val % 10) as u8;
+        val /= 10;
     }
-    // SAFETY: buf contains only ASCII characters ('0'..'9' or '-')
+    // SAFETY: buf contains only ASCII digits ('0'..'9')
     s.push_str(unsafe { std::str::from_utf8_unchecked(&buf[i..]) });
 }
 
@@ -200,5 +200,28 @@ mod tests {
         }];
         let svg = export(&regions, 8, 8);
         assert!(svg.contains("M0 0H2V2H0ZM4 4H6V6H4Z"));
+    }
+
+    #[test]
+    fn push_i32_handles_min_and_negative_values() {
+        let mut s = String::new();
+        push_i32(&mut s, 0);
+        assert_eq!(s, "0");
+
+        s.clear();
+        push_i32(&mut s, 12345);
+        assert_eq!(s, "12345");
+
+        s.clear();
+        push_i32(&mut s, -12345);
+        assert_eq!(s, "-12345");
+
+        s.clear();
+        push_i32(&mut s, i32::MIN);
+        assert_eq!(s, "-2147483648");
+
+        s.clear();
+        push_i32(&mut s, i32::MAX);
+        assert_eq!(s, "2147483647");
     }
 }
