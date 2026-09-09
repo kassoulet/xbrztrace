@@ -56,7 +56,11 @@ pub struct ArgbImage {
 
 impl ArgbImage {
     pub fn new(width: usize, height: usize, pixels: Vec<Argb>) -> ArgbImage {
-        debug_assert_eq!(pixels.len(), width * height);
+        assert_eq!(
+            pixels.len(),
+            width * height,
+            "pixel buffer length does not match image dimensions"
+        );
         ArgbImage {
             width,
             height,
@@ -715,15 +719,23 @@ pub fn scale_image(src: &ArgbImage, factor: u8, cfg: &ScalerConfig) -> ArgbImage
     let scale = factor as usize;
     let src_width = src.width;
     let src_height = src.height;
-    let dst_width = src_width * scale;
-    let dst_height = src_height * scale;
-    let mut dst = vec![Argb(0); dst_width * dst_height];
+    let dst_width = src_width.checked_mul(scale).expect("image width overflow");
+    let dst_height = src_height
+        .checked_mul(scale)
+        .expect("image height overflow");
+    let total_dst_pixels = dst_width
+        .checked_mul(dst_height)
+        .expect("upscaled pixel count overflow");
+    let mut dst = vec![Argb(0); total_dst_pixels];
     let table = &TABLES[(factor - 2) as usize];
     debug_assert_eq!(table.scale, scale);
 
     // Step 1: preprocess every 4x4 kernel once and record the corner blend
     // decisions for its center pixel.
-    let mut kernels = vec![0u8; src_width * src_height];
+    let total_src_pixels = src_width
+        .checked_mul(src_height)
+        .expect("source pixel count overflow");
+    let mut kernels = vec![0u8; total_src_pixels];
     for y in 0..src_height {
         for x in 0..src_width {
             let k4 = build_kernel4(&src.pixels, src_width, src_height, x, y);
@@ -820,6 +832,12 @@ mod tests {
         assert_eq!((out.width, out.height), (10, 15));
 
         let result = std::panic::catch_unwind(|| scale_image(&src, 7, &ScalerConfig::default()));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn argb_image_mismatched_buffer_panics() {
+        let result = std::panic::catch_unwind(|| ArgbImage::new(2, 2, vec![Argb(0); 3]));
         assert!(result.is_err());
     }
 }

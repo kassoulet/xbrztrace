@@ -27,6 +27,19 @@ pub fn load(path: &Path) -> Result<ArgbImage> {
     let (width, height) = img.dimensions();
     let width = width as usize;
     let height = height as usize;
+
+    // Security: Validate image dimensions to prevent Denial of Service (DoS) via
+    // excessive memory allocation or integer overflow during upscaling.
+    if width == 0 || height == 0 {
+        anyhow::bail!("input image has invalid dimensions ({width}x{height})");
+    }
+    const MAX_DIMENSION: usize = 16_384;
+    if width > MAX_DIMENSION || height > MAX_DIMENSION {
+        anyhow::bail!(
+            "input image dimensions ({width}x{height}) exceed maximum allowed limit ({MAX_DIMENSION}x{MAX_DIMENSION})"
+        );
+    }
+
     let pixels = img
         .pixels()
         .map(|p| Argb::from_rgba(p[0], p[1], p[2], p[3]))
@@ -51,6 +64,13 @@ pub struct ZoomInfo {
 /// perfect match when the downscaled image is upscaled back to the original
 /// dimensions using nearest-neighbor.
 pub fn detect_integer_zoom(img: &ArgbImage) -> ZoomInfo {
+    if img.width == 0 || img.height == 0 {
+        return ZoomInfo {
+            factor: 1,
+            is_zoomed: false,
+        };
+    }
+
     const MAX_FACTOR: u8 = 6;
 
     for factor in (2..=MAX_FACTOR).rev() {
@@ -246,5 +266,29 @@ mod tests {
         let info = detect_integer_zoom(&img);
         assert_eq!(info.factor, 1);
         assert!(!info.is_zoomed);
+    }
+
+    #[test]
+    fn zero_dimension_image_not_zoomed() {
+        let img = ArgbImage::new(0, 0, vec![]);
+        let info = detect_integer_zoom(&img);
+        assert_eq!(info.factor, 1);
+        assert!(!info.is_zoomed);
+    }
+
+    #[test]
+    fn oversized_image_is_rejected() {
+        let dir = std::env::temp_dir().join("xbrztrace_loader_test_oversized");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("oversized.png");
+        let width = 16_385u32;
+        let height = 1u32;
+        let rgba = vec![0u8; (width * height * 4) as usize];
+        write_png(&path, width, height, &rgba);
+
+        let err = load(&path).unwrap_err();
+        assert!(err.to_string().contains("exceed maximum allowed limit"));
+
+        std::fs::remove_dir_all(&dir).ok();
     }
 }

@@ -164,7 +164,11 @@ fn trace_loop(
     let mut d = start_dir;
 
     // Defensive bound: a loop cannot traverse more edges than exist.
-    let max_edges = 4 * img.width * img.height + 16;
+    let max_edges = img
+        .width
+        .saturating_mul(img.height)
+        .saturating_mul(4)
+        .saturating_add(16);
     for _ in 0..max_edges {
         mark_visited(visited, x, y, d, w);
         let (nx, ny) = match d {
