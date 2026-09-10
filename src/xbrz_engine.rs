@@ -56,9 +56,12 @@ pub struct ArgbImage {
 
 impl ArgbImage {
     pub fn new(width: usize, height: usize, pixels: Vec<Argb>) -> ArgbImage {
+        let expected_len = width
+            .checked_mul(height)
+            .expect("image dimensions overflow usize");
         assert_eq!(
             pixels.len(),
-            width * height,
+            expected_len,
             "pixel buffer length does not match image dimensions"
         );
         ArgbImage {
@@ -838,6 +841,14 @@ mod tests {
     #[test]
     fn argb_image_mismatched_buffer_panics() {
         let result = std::panic::catch_unwind(|| ArgbImage::new(2, 2, vec![Argb(0); 3]));
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn argb_image_overflow_panics_cleanly() {
+        let result = std::panic::catch_unwind(|| {
+            ArgbImage::new(usize::MAX, 2, vec![]);
+        });
         assert!(result.is_err());
     }
 }

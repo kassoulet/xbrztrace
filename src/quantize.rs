@@ -44,7 +44,7 @@ use crate::xbrz_engine::{color_dist, Argb, ArgbImage};
 /// for the metric and scale — the engine's default equal-color threshold is
 /// 30). Tolerances `<= 0` return the image unchanged.
 pub fn quantize(img: &ArgbImage, tolerance: f64) -> ArgbImage {
-    if tolerance <= 0.0 || img.pixels.is_empty() {
+    if !tolerance.is_finite() || tolerance <= 0.0 || img.pixels.is_empty() {
         return img.clone();
     }
 
@@ -218,5 +218,14 @@ mod tests {
             Argb(0),
         ]);
         assert_eq!(quantize(&img, 30.0).pixels, quantize(&img, 30.0).pixels);
+    }
+
+    #[test]
+    fn nan_tolerance_returns_image_unchanged() {
+        let img = row(&[
+            Argb::from_rgba(200, 100, 50, 255),
+            Argb::from_rgba(204, 102, 52, 255),
+        ]);
+        assert_eq!(quantize(&img, f64::NAN).pixels, img.pixels);
     }
 }

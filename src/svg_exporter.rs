@@ -83,7 +83,9 @@ fn push_i32(s: &mut String, n: i32) {
 /// and vertical runs emit as single `H`/`V` commands.
 fn write_path_data(d: &mut String, loop_: &crate::vectorizer::PathLoop) {
     let points = &loop_.points;
-    debug_assert!(points.len() >= 3);
+    if points.len() < 3 {
+        return;
+    }
     d.push('M');
     push_i32(d, points[0].0);
     d.push(' ');
@@ -223,5 +225,20 @@ mod tests {
         s.clear();
         push_i32(&mut s, i32::MAX);
         assert_eq!(s, "2147483647");
+    }
+
+    #[test]
+    fn degenerate_loops_handled_gracefully() {
+        let empty_loop = PathLoop { points: vec![] };
+        let single_point_loop = PathLoop {
+            points: vec![(1, 1)],
+        };
+        let regions = vec![Region {
+            color: Argb::from_rgba(255, 0, 0, 255),
+            loops: vec![empty_loop, single_point_loop],
+        }];
+        let svg = export(&regions, 4, 4);
+        assert!(svg.contains("d=\"\""));
+        assert!(svg.contains("fill=\"#ff0000\""));
     }
 }
