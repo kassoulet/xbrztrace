@@ -14,10 +14,17 @@ use crate::xbrz_engine::{Argb, ArgbImage};
 /// the file content (not the extension), so mislabeled files still load as
 /// long as the bytes are a recognizable image format.
 pub fn load(path: &Path) -> Result<ArgbImage> {
-    let reader = image::ImageReader::open(path)
+    let mut reader = image::ImageReader::open(path)
         .with_context(|| format!("cannot open input image `{}`", path.display()))?
         .with_guessed_format()
         .with_context(|| format!("cannot detect the format of `{}`", path.display()))?;
+
+    const MAX_DIMENSION: usize = 16_384;
+    let mut limits = image::Limits::default();
+    limits.max_image_width = Some(MAX_DIMENSION as u32);
+    limits.max_image_height = Some(MAX_DIMENSION as u32);
+    limits.max_alloc = Some((MAX_DIMENSION * MAX_DIMENSION * 4) as u64);
+    reader.limits(limits);
 
     let img = reader
         .decode()
@@ -33,7 +40,6 @@ pub fn load(path: &Path) -> Result<ArgbImage> {
     if width == 0 || height == 0 {
         anyhow::bail!("input image has invalid dimensions ({width}x{height})");
     }
-    const MAX_DIMENSION: usize = 16_384;
     if width > MAX_DIMENSION || height > MAX_DIMENSION {
         anyhow::bail!(
             "input image dimensions ({width}x{height}) exceed maximum allowed limit ({MAX_DIMENSION}x{MAX_DIMENSION})"
@@ -287,7 +293,11 @@ mod tests {
         write_png(&path, width, height, &rgba);
 
         let err = load(&path).unwrap_err();
-        assert!(err.to_string().contains("exceed maximum allowed limit"));
+        let msg = format!("{err:#}").to_lowercase();
+        assert!(
+            msg.contains("exceed") || msg.contains("limit") || msg.contains("dimension"),
+            "expected error containing limit/exceed/dimension, got: {msg}"
+        );
 
         std::fs::remove_dir_all(&dir).ok();
     }
