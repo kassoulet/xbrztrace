@@ -120,9 +120,11 @@ fn is_visited(visited: &[u8], vx: i32, vy: i32, d: u8, w: i32, h: i32) -> bool {
 }
 
 #[inline]
-fn mark_visited(visited: &mut [u8], vx: i32, vy: i32, d: u8, w: i32) {
+fn mark_visited(visited: &mut [u8], vx: i32, vy: i32, d: u8, w: i32, h: i32) {
     let (ox, oy, oedge) = owner(vx, vy, d);
-    visited[oy as usize * w as usize + ox as usize] |= 1 << oedge;
+    if ox >= 0 && oy >= 0 && ox < w && oy < h {
+        visited[oy as usize * w as usize + ox as usize] |= 1 << oedge;
+    }
 }
 
 /// Fast boundary check during the outer `vectorize` scan over pixel `(x, y)`:
@@ -170,7 +172,7 @@ fn trace_loop(
         .saturating_mul(4)
         .saturating_add(16);
     for _ in 0..max_edges {
-        mark_visited(visited, x, y, d, w);
+        mark_visited(visited, x, y, d, w, h);
         let (nx, ny) = match d {
             E => (x + 1, y),
             S => (x, y + 1),
@@ -401,6 +403,18 @@ mod tests {
         // A 4x3 rectangle has 4 corner points.
         assert_eq!(pts.len(), 4);
         assert_eq!(area(pts).abs(), 24);
+    }
+
+    #[test]
+    fn mark_visited_out_of_bounds_is_safe() {
+        let mut visited = vec![0u8; 4];
+        // Call mark_visited with negative/out-of-bounds coordinates
+        mark_visited(&mut visited, -1, -1, E, 2, 2);
+        mark_visited(&mut visited, 10, 10, E, 2, 2);
+        mark_visited(&mut visited, 0, -5, S, 2, 2);
+        mark_visited(&mut visited, -5, 0, W, 2, 2);
+        // Ensure no panics occurred and visited bitmap is untouched
+        assert_eq!(visited, vec![0u8; 4]);
     }
 
     #[test]
