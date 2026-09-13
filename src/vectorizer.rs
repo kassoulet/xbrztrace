@@ -228,7 +228,6 @@ fn simplify(points: &[(i32, i32)]) -> Vec<(i32, i32)> {
 ///
 /// Fully transparent colors are skipped: they have nothing to render.
 pub fn vectorize(img: &ArgbImage, merge_colors: bool) -> Vec<Region> {
-    let w = img.width as i32;
     let mut visited = vec![0u8; img.width * img.height];
 
     // Collect loops grouped by color.
@@ -239,9 +238,12 @@ pub fn vectorize(img: &ArgbImage, merge_colors: bool) -> Vec<Region> {
             if color.a() == 0 {
                 continue; // nothing to render
             }
-            let base = (y as i32) * w + (x as i32);
+            // Security: Use usize arithmetic for buffer indexing. Calculating
+            // `(y as i32) * (img.width as i32)` risks 32-bit signed integer
+            // overflow on large/scaled images, causing panics or out-of-bounds access.
+            let base = y * img.width + x;
             for edge in [EDGE_TOP, EDGE_RIGHT, EDGE_BOTTOM, EDGE_LEFT] {
-                if visited[base as usize] & (1 << edge) != 0 {
+                if visited[base] & (1 << edge) != 0 {
                     continue;
                 }
                 if !pixel_edge_is_boundary(img, x as i32, y as i32, color, edge) {
